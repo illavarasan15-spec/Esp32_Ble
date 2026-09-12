@@ -1,39 +1,599 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BLE 4CH Switch</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart 4CH Hub</title>
+  <!-- Google Font & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
-    body { font-family: -apple-system, system-ui, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 16px; display: flex; justify-content: center; }
-    .card { background: #1e293b; border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    h2 { margin: 0 0 16px 0; font-size: 18px; text-align: center; color: #38bdf8; }
-    .connect-bar { margin-bottom: 16px; text-align: center; }
-    .btn-conn { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-    .btn-conn.connected { background: #10b981; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .btn { padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 14px; text-align: center; }
-    .btn-on { background: #10b981; color: white; }
-    .btn-off { background: #334155; color: #94a3b8; }
-    .btn-all-on { background: #2563eb; color: white; }
-    .btn-all-off { background: #dc2626; color: white; }
-    .timer-box { background: #0f172a; border-radius: 12px; padding: 14px; margin-top: 16px; }
-    .sec-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 8px; }
-    .sel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-    .btn-sel { background: #334155; color: #cbd5e1; padding: 8px 0; border: 2px solid transparent; border-radius: 6px; font-size: 12px; font-weight: bold; }
-    .btn-sel.active { border-color: #38bdf8; background: #1e293b; color: #38bdf8; }
-    .t-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .btn-t { background: #475569; color: white; padding: 10px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 0%, #171d33 0%, #0b0e17 100%);
+      --card-bg: rgba(26, 32, 53, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(255, 255, 255, 0.15);
+      --primary-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.35);
+      --accent-red: #ef4444;
+      --accent-red-glow: rgba(239, 68, 68, 0.35);
+      --accent-amber: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --btn-bg: #1e293b;
+      --btn-bg-hover: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      color: var(--text-main);
+      padding: 20px 16px 40px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top Header & Connection Bar */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      font-size: 1.1rem;
+      color: #fff;
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .connect-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 9999px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.25s ease;
+    }
+
+    .connect-btn.connected {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+
+    .connect-btn.connected .status-dot {
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* Master Controls (All On / All Off) */
+    .master-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .master-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.2s ease;
+    }
+
+    .master-btn:active {
+      transform: scale(0.97);
+    }
+
+    .master-btn.all-on {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .master-btn.all-off {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: #ffffff;
+      box-shadow: 0 4px 16px rgba(220, 38, 38, 0.35);
+    }
+
+    /* Channel Cards Grid */
+    .channels-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .channel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      min-height: 128px;
+    }
+
+    .channel-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .channel-card.active {
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 8px 24px var(--accent-green-glow);
+    }
+
+    .channel-card.active::after {
+      opacity: 1;
+    }
+
+    .channel-card.selected-target {
+      outline: 2px dashed var(--accent-amber);
+      outline-offset: -2px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .card-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .channel-card.active .card-icon-wrap {
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+    }
+
+    .badge-status {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+    }
+
+    .channel-card.active .badge-status {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+
+    .card-bottom {
+      margin-top: 18px;
+      z-index: 2;
+    }
+
+    .card-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .card-subtext {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Timer Panel */
+    .timer-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .panel-title i {
+      color: var(--accent-amber);
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 8px;
+    }
+
+    .pill-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .pill-btn {
+      padding: 10px 0;
+      background: var(--btn-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .pill-btn:hover {
+      background: var(--btn-bg-hover);
+      color: #fff;
+    }
+
+    .pill-btn.active-target {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-color: #f59e0b;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+
+    .pill-btn.duration-btn:active {
+      transform: scale(0.95);
+      background: var(--primary-blue);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>⚡ BLE 4CH Controller</h2>
 
-    <div class="connect-bar">
-      <button id="connBtn" class="btn-conn" onclick="connectBLE()">Pair & Connect Bluetooth</button>
-    </div>
+  <div class="app-container">
+    
+    <!-- Top Bar -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <div class="brand-title">Smart Switch</div>
+      </div>
 
+      <button id="bleBtn" class="connect-btn" onclick="toggleBLE()">
+        <span class="status-dot"></span>
+        <span id="bleBtnText">Connect</span>
+      </button>
+    </header>
+
+    <!-- Master Controls -->
+    <section class="master-grid">
+      <button class="master-btn all-on" onclick="sendBLECommand('P')">
+        <i class="fa-solid fa-power-off"></i> ALL ON
+      </button>
+      <button class="master-btn all-off" onclick="sendBLECommand('E')">
+        <i class="fa-solid fa-moon"></i> ALL OFF
+      </button>
+    </section>
+
+    <!-- 4 Channel Cards Grid -->
+    <section class="channels-grid">
+      <!-- Channel 1 -->
+      <div id="card-ch1" class="channel-card selected-target" onclick="toggleChannel(0)">
+        <div class="card-top">
+          <div class="card-icon-wrap">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <span id="status-ch1" class="badge-status">OFF</span>
+        </div>
+        <div class="card-bottom">
+          <div class="card-label">Relay 1</div>
+          <div id="subtext-ch1" class="card-subtext">Tap to toggle</div>
+        </div>
+      </div>
+
+      <!-- Channel 2 -->
+      <div id="card-ch2" class="channel-card" onclick="toggleChannel(1)">
+        <div class="card-top">
+          <div class="card-icon-wrap">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <span id="status-ch2" class="badge-status">OFF</span>
+        </div>
+        <div class="card-bottom">
+          <div class="card-label">Relay 2</div>
+          <div id="subtext-ch2" class="card-subtext">Tap to toggle</div>
+        </div>
+      </div>
+
+      <!-- Channel 3 -->
+      <div id="card-ch3" class="channel-card" onclick="toggleChannel(2)">
+        <div class="card-top">
+          <div class="card-icon-wrap">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <span id="status-ch3" class="badge-status">OFF</span>
+        </div>
+        <div class="card-bottom">
+          <div class="card-label">Relay 3</div>
+          <div id="subtext-ch3" class="card-subtext">Tap to toggle</div>
+        </div>
+      </div>
+
+      <!-- Channel 4 -->
+      <div id="card-ch4" class="channel-card" onclick="toggleChannel(3)">
+        <div class="card-top">
+          <div class="card-icon-wrap">
+            <i class="fa-solid fa-lightbulb"></i>
+          </div>
+          <span id="status-ch4" class="badge-status">OFF</span>
+        </div>
+        <div class="card-bottom">
+          <div class="card-label">Relay 4</div>
+          <div id="subtext-ch4" class="card-subtext">Tap to toggle</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Timer Automation Drawer -->
+    <section class="timer-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-regular fa-clock"></i> Automation & Timer
+        </div>
+      </div>
+
+      <!-- Target Selection -->
+      <div>
+        <div class="section-label">1. Choose Target Relay</div>
+        <div class="pill-grid">
+          <button id="target-btn-0" class="pill-btn active-target" onclick="selectTarget(0)">CH 1</button>
+          <button id="target-btn-1" class="pill-btn" onclick="selectTarget(1)">CH 2</button>
+          <button id="target-btn-2" class="pill-btn" onclick="selectTarget(2)">CH 3</button>
+          <button id="target-btn-3" class="pill-btn" onclick="selectTarget(3)">CH 4</button>
+        </div>
+      </div>
+
+      <!-- Duration Selection -->
+      <div>
+        <div class="section-label">2. Assign Duration</div>
+        <div class="pill-grid">
+          <button class="pill-btn duration-btn" onclick="sendBLECommand('T2')">2H</button>
+          <button class="pill-btn duration-btn" onclick="sendBLECommand('T4')">4H</button>
+          <button class="pill-btn duration-btn" onclick="sendBLECommand('T6')">6H</button>
+          <button class="pill-btn duration-btn" onclick="sendBLECommand('T8')">8H</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Web Bluetooth Logic -->
+  <script>
+    const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+    const CHAR_UUID    = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+    let bleDevice = null;
+    let bleServer = null;
+    let bleCharacteristic = null;
+
+    let selectedIndex = 0;
+    let chStates = [false, false, false, false];
+
+    // Connect / Disconnect Handlers
+    async function toggleBLE() {
+      if (bleDevice && bleDevice.gatt.connected) {
+        disconnectBLE();
+      } else {
+        connectBLE();
+      }
+    }
+
+    async function connectBLE() {
+      try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ name: "ESP32_Smart_Switch" }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+        bleServer = await bleDevice.gatt.connect();
+        const service = await bleServer.getPrimaryService(SERVICE_UUID);
+        bleCharacteristic = await service.getCharacteristic(CHAR_UUID);
+
+        // Start Notifications
+        await bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+        // Update UI
+        document.getElementById('bleBtn').classList.add('connected');
+        document.getElementById('bleBtnText').innerText = "ESP32";
+
+        // Query initial state
+        sendBLECommand('Q');
+      } catch (err) {
+        console.error("BLE Error:", err);
+      }
+    }
+
+    function disconnectBLE() {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+    }
+
+    function onDisconnected() {
+      document.getElementById('bleBtn').classList.remove('connected');
+      document.getElementById('bleBtnText').innerText = "Connect";
+    }
+
+    // Send ASCII commands matching your sketch
+    async function sendBLECommand(cmdStr) {
+      if (!bleCharacteristic) return;
+      try {
+        let encoder = new TextEncoder();
+        await bleCharacteristic.writeValue(encoder.encode(cmdStr));
+      } catch (err) {
+        console.error("Send Error:", err);
+      }
+    }
+
+    // Toggle Channels: sends '1', '2', '3', or '4'
+    function toggleChannel(idx) {
+      const commands = ['1', '2', '3', '4'];
+      sendBLECommand(commands[idx]);
+    }
+
+    // Select Timer Channel: sends 'a', 'b', 'c', or 'd'
+    function selectTarget(idx) {
+      selectedIndex = idx;
+      updateTargetUI();
+      const commands = ['a', 'b', 'c', 'd'];
+      sendBLECommand(commands[idx]);
+    }
+
+    function updateTargetUI() {
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById(`target-btn-${i}`);
+        const card = document.getElementById(`card-ch${i+1}`);
+        if (i === selectedIndex) {
+          btn.classList.add('active-target');
+          card.classList.add('selected-target');
+        } else {
+          btn.classList.remove('active-target');
+          card.classList.remove('selected-target');
+        }
+      }
+    }
+
+    // Parse notification string: "S:sel,ch1,ch2,ch3,ch4"
+    function handleNotifications(event) {
+      let value = new TextDecoder().decode(event.target.value);
+      if (value.startsWith("S:")) {
+        const parts = value.substring(2).split(',').map(Number);
+        if (parts.length === 5) {
+          selectedIndex = parts[0] - 1;
+          chStates = [Boolean(parts[1]), Boolean(parts[2]), Boolean(parts[3]), Boolean(parts[4])];
+          
+          updateTargetUI();
+          updateCardsUI();
+        }
+      }
+    }
+
+    function updateCardsUI() {
+      for (let i = 0; i < 4; i++) {
+        const card = document.getElementById(`card-ch${i+1}`);
+        const status = document.getElementById(`status-ch${i+1}`);
+        const sub = document.getElementById(`subtext-ch${i+1}`);
+
+        if (chStates[i]) {
+          card.classList.add('active');
+          status.innerText = "ON";
+          sub.innerText = "Running";
+        } else {
+          card.classList.remove('active');
+          status.innerText = "OFF";
+          sub.innerText = "Tap to toggle";
+        }
+      }
+    }
+  </script>
+</body>
+</html>
     <div class="grid-2">
       <button class="btn btn-all-on" onclick="sendBLE('P')">ALL ON</button>
       <button class="btn btn-all-off" onclick="sendBLE('E')">ALL OFF</button>
